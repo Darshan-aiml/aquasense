@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microplastic Sensor - Live Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-6xl mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-cyan-400 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mr-3"><path d="M21 6.5c0-1.2-2-1.5-3-1.5h-2.5c-1.5 0-2.5-1-2.5-2.5V2"></path><path d="M3 6.5c0-1.2 2-1.5 3-1.5h2.5c1.5 0 2.5-1 2.5-2.5V2"></path><path d="M12 11.5v10.5"></path><path d="M12 2v1.5c0 1.5-1 2.5-2.5 2.5h-5C3 6 3 6.5 3 6.5S3 7 4.5 7h5c1.5 0 2.5 1 2.5 2.5v2"></path><path d="M12 2v1.5c0 1.5 1 2.5 2.5 2.5h5c1.5 0 1.5-.5 1.5-.5s0 .5-1.5.5h-5C13 6 12 7 12 8.5v3"></path></svg>
+                AquaSense Live Feed
+            </h1>
+            <p class="text-gray-400 mt-2">Simulating real-time sensor data from the field</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+            <!-- Live Reading Card -->
+            <div class="lg:col-span-1 bg-gray-800 p-6 rounded-lg border border-gray-700 flex flex-col justify-center items-center">
+                <h2 class="text-lg font-medium text-gray-400 mb-2">Live Particle Count</h2>
+                <p id="live-reading" class="text-6xl font-bold text-cyan-300">---</p>
+                <p class="text-gray-500">particles / Liter</p>
+                <div id="status-indicator" class="mt-4 flex items-center text-sm">
+                    <span class="h-3 w-3 rounded-full bg-gray-500 mr-2 animate-pulse"></span>
+                    Connecting to sensor...
+                </div>
+            </div>
+            
+            <!-- Average Size Card -->
+            <div class="lg:col-span-1 bg-gray-800 p-6 rounded-lg border border-gray-700 flex flex-col justify-center items-center">
+                <h2 class="text-lg font-medium text-gray-400 mb-2">Average Particle Size</h2>
+                <p id="avg-size" class="text-6xl font-bold text-fuchsia-300">---</p>
+                <p class="text-gray-500">micrometers (µm)</p>
+                 <div class="mt-4 flex items-center text-sm text-gray-800">
+                    <span class="h-3 w-3 rounded-full mr-2"></span>
+                    -
+                </div>
+            </div>
+
+            <!-- Concentration Chart Card -->
+            <div class="lg:col-span-2 bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <h3 class="text-lg font-semibold mb-4">Concentration Trend</h3>
+                <div class="h-64">
+                    <canvas id="concentrationChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <!-- Size Distribution Chart -->
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <h3 class="text-lg font-semibold mb-4">Size Distribution</h3>
+                <div class="h-64 relative">
+                    <canvas id="sizeDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Readings Table -->
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <h3 class="text-lg font-semibold mb-4">Data Log</h3>
+                <div class="overflow-y-auto h-64">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr>
+                                <th class="p-2 text-sm font-semibold text-gray-400 sticky top-0 bg-gray-800">Time</th>
+                                <th class="p-2 text-sm font-semibold text-gray-400 sticky top-0 bg-gray-800">Reading (p/L)</th>
+                                <th class="p-2 text-sm font-semibold text-gray-400 sticky top-0 bg-gray-800">Avg. Size (µm)</th>
+                                <th class="p-2 text-sm font-semibold text-gray-400 sticky top-0 bg-gray-800">Risk Assessment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scans-table">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const liveReadingEl = document.getElementById('live-reading');
+            const avgSizeEl = document.getElementById('avg-size');
+            const statusIndicatorEl = document.getElementById('status-indicator');
+            const scansTableBody = document.getElementById('scans-table');
+            
+            const concentrationCtx = document.getElementById('concentrationChart').getContext('2d');
+            const sizeDistributionCtx = document.getElementById('sizeDistributionChart').getContext('2d');
+            
+            const MAX_DATA_POINTS = 20;
+            const MAX_TABLE_ROWS = 10;
+            let concentrationChart, sizeChart;
+
+            function initializeConcentrationChart() {
+                concentrationChart = new Chart(concentrationCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Particles / Liter',
+                            data: [],
+                            borderColor: 'rgb(34, 211, 238)',
+                            backgroundColor: 'rgba(34, 211, 238, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9ca3af' } },
+                            x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+            
+            function initializeSizeChart() {
+                sizeChart = new Chart(sizeDistributionCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['< 100 µm', '100-500 µm', '500µm - 1mm', '> 1mm'],
+                        datasets: [{
+                            label: 'Size Distribution',
+                            data: [0, 0, 0, 0],
+                            backgroundColor: [
+                                'rgba(192, 132, 252, 0.8)', // purple-300
+                                'rgba(240, 148, 240, 0.8)', // fuchsia-300 (custom)
+                                'rgba(251, 113, 133, 0.8)', // rose-400
+                                'rgba(252, 165, 165, 0.8)'  // rose-300
+                            ],
+                            borderColor: '#1f2937', // bg-gray-800
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#9ca3af'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function getRiskStatus(value) {
+                if (value > 1800) return { text: 'High', color: 'text-red-400' };
+                if (value > 1000) return { text: 'Medium', color: 'text-yellow-400' };
+                return { text: 'Low', color: 'text-green-400' };
+            }
+
+            function updateData() {
+                // Simulate new readings
+                const newReading = Math.floor(Math.random() * 1500) + 500;
+                const avgSize = Math.floor(Math.random() * 950) + 50;
+                const currentTime = new Date().toLocaleTimeString();
+
+                // 1. Update live reading cards
+                liveReadingEl.textContent = newReading.toLocaleString();
+                avgSizeEl.textContent = avgSize;
+                statusIndicatorEl.innerHTML = `
+                    <span class="h-3 w-3 rounded-full bg-green-500 mr-2 animate-ping"></span>
+                    <span class="h-3 w-3 rounded-full bg-green-500 mr-2 absolute"></span>
+                    Live
+                `;
+
+                // 2. Update concentration chart
+                concentrationChart.data.labels.push(currentTime);
+                concentrationChart.data.datasets[0].data.push(newReading);
+                if (concentrationChart.data.labels.length > MAX_DATA_POINTS) {
+                    concentrationChart.data.labels.shift();
+                    concentrationChart.data.datasets[0].data.shift();
+                }
+                concentrationChart.update();
+
+                // 3. Update size distribution chart
+                const dist1 = Math.random();
+                const dist2 = Math.random() * (1 - dist1);
+                const dist3 = Math.random() * (1 - dist1 - dist2);
+                const dist4 = 1 - dist1 - dist2 - dist3;
+                sizeChart.data.datasets[0].data = [dist1, dist2, dist3, dist4];
+                sizeChart.update();
+
+
+                // 4. Update data log table
+                const newRow = document.createElement('tr');
+                newRow.className = 'border-b border-gray-700/50';
+                const risk = getRiskStatus(newReading);
+                newRow.innerHTML = `
+                    <td class="p-2 text-gray-400">${currentTime}</td>
+                    <td class="p-2">${newReading.toLocaleString()}</td>
+                    <td class="p-2 text-fuchsia-300">${avgSize}</td>
+                    <td class="p-2 font-medium ${risk.color}">${risk.text}</td>
+                `;
+                scansTableBody.prepend(newRow);
+                if (scansTableBody.children.length > MAX_TABLE_ROWS) {
+                    scansTableBody.removeChild(scansTableBody.lastChild);
+                }
+            }
+            
+            initializeConcentrationChart();
+            initializeSizeChart();
+
+            // Start the simulation after a short delay
+            setTimeout(() => {
+                 setInterval(updateData, 2500); // Update every 2.5 seconds
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+
