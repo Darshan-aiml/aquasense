@@ -3,171 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Sai Intelliverse 2.0</title>
+    <title>Ocean Microplastic Live Report</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Chart.js CDN for graphing -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <!-- Lucide Icons (to mimic the icons used in the React version) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Custom styles for the cyberpunk theme */
-        html, body {
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
-        }
-        
+        /* Custom styles for the glass effect and dark theme */
         body {
-            background-color: #0a0a1a;
-            color: #e0e0e0;
             font-family: 'Inter', sans-serif;
-            margin: 0;
+            background-color: #0d1117; /* Very dark background */
         }
-
-        .font-orbitron {
-            font-family: 'Orbitron', sans-serif;
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
-
-        /* --- Neon Glow & Glitch Effects --- */
-        .neon-text {
-            text-shadow:
-                0 0 5px #00aaff,
-                0 0 10px #00aaff,
-                0 0 20px #00aaff,
-                0 0 40px #ff00ff,
-                0 0 80px #ff00ff;
+        .chart-container {
+            position: relative;
+            /* Ensure chart is responsive but has a minimum height */
+            height: 400px; 
+            max-height: 80vh; 
         }
-        
-        .glitch {
-            animation: glitch 1.5s linear infinite;
+        /* Chart.js specific colors for dark mode */
+        canvas {
+            background-color: transparent !important;
         }
-
-        @keyframes glitch {
-            2%, 64% {
-                transform: translate(2px, 0) skew(0deg);
-            }
-            4%, 60% {
-                transform: translate(-2px, 0) skew(0deg);
-            }
-            62% {
-                transform: translate(0, 0) skew(5deg);
-            }
-        }
-
-        .glitch::before,
-        .glitch::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .glitch::before {
-            left: 2px;
-            text-shadow: -2px 0 #ff00ff;
-            clip: rect(44px, 9999px, 56px, 0);
-            animation: glitch-anim 5s infinite linear alternate-reverse;
-        }
-
-        .glitch::after {
-            left: -2px;
-            text-shadow: -2px 0 #00ffff, 2px 2px #ff00ff;
-            clip: rect(85px, 9999px, 90px, 0);
-            animation: glitch-anim-2 3s infinite linear alternate-reverse;
-        }
-        
-        @keyframes glitch-anim {
-            0% { clip: rect(42px, 9999px, 44px, 0); transform: skew(0.3deg); }
-            5% { clip: rect(17px, 9999px, 94px, 0); }
-            100% { clip: rect(32px, 9999px, 148px, 0); transform: skew(-0.2deg); }
-        }
-
-        @keyframes glitch-anim-2 {
-            0% { clip: rect(2px, 9999px, 99px, 0); transform: skew(0.2deg); }
-            100% { clip: rect(92px, 9999px, 98px, 0); transform: skew(0.3deg); }
-        }
-
-        /* --- Background Grid --- */
-        .background-grid {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1; /* Above 3D canvas, below text */
-            background-image:
-                linear-gradient(to right, rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-        }
-
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 0; /* At the very back */
-        }
-        
     </style>
 </head>
-<body class="antialiased">
-    <canvas id="bg-canvas"></canvas>
-    <div class="background-grid"></div>
-    <div class="relative min-h-screen flex flex-col items-center justify-center p-4 text-center">
-        <!-- Hero Section -->
-        <header class="z-10">
-            <h1 class="font-orbitron text-4xl md:text-6xl lg:text-7xl font-black uppercase glitch relative inline-block neon-text" data-text="WELCOME TO SAI INTELLIVERSE 2.0">
-                WELCOME TO SAI INTELLIVERSE 2.0
+<body class="min-h-screen bg-gray-900 font-sans p-4 sm:p-8 text-white">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                Ocean Microplastic Live Report
             </h1>
+            <p class="text-blue-300 mt-1">Real-time Environmental and Microplastic Data | Atlantic Station 3</p>
         </header>
+
+        <!-- Live Metrics Grid -->
+        <section id="metrics-grid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <!-- Stat Cards will be injected here -->
+        </section>
+
+        <!-- Time-Series Chart -->
+        <section class="bg-gray-800/70 glass-card p-4 sm:p-8 rounded-xl shadow-2xl border border-blue-700/50">
+            <h2 class="text-2xl font-semibold mb-6 text-blue-200">24-Hour Environmental History</h2>
+            <div class="chart-container">
+                <canvas id="timeSeriesChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Footer/Disclaimer -->
+        <footer class="mt-8 text-center text-xs text-blue-500">
+            <p id="footer-text">Data simulated for visualization purposes. Report generated on...</p>
+        </footer>
     </div>
 
-    <script>
-        // --- Three.js 3D Background ---
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    <!-- Firebase Setup (Mandatory for Canvas Environment) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const renderer = new THREE.WebGLRenderer({ 
-            canvas: document.querySelector('#bg-canvas'),
-            alpha: true // Make canvas transparent
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        setLogLevel('debug'); 
         
-        // --- Object ---
-        const geometry = new THREE.IcosahedronGeometry(12, 0); // Changed from TorusKnot to a uniform Icosahedron
-        const material = new THREE.MeshBasicMaterial({ 
-            color: 0x00ffff, // Neon cyan color
-            wireframe: true 
-        });
-        const shape = new THREE.Mesh(geometry, material); // Renamed variable for clarity
-        scene.add(shape);
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
         
-        camera.position.z = 30;
-        
-        // --- Animation ---
-        function animate() {
-            requestAnimationFrame(animate);
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Authentication logic
+            async function authenticate() {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
+                    }
+                } catch (error) {
+                    console.error("Firebase Auth Error:", error);
+                }
+            }
             
-            shape.rotation.x += 0.001; // Uniform rotation
-            shape.rotation.y += 0.001;
-            shape.rotation.z += 0.001;
-            
-            renderer.render(scene, camera);
+            authenticate();
+        } else {
+            console.warn("Firebase config not found. Running application without persistence/auth features.");
         }
         
-        // --- Responsiveness ---
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        // Expose global variables (though not used for persistence in this mock data app)
+        window.db = db;
+        window.auth = auth;
+    </script>
+    
+    <script>
+        // --- CONSTANTS & DATA ---
+        let timeSeriesData = [];
+        let dataChart = null; // Chart.js instance
+        const dataInterval = 10000; // Update every 10 seconds
 
-        animate();
+        const metrics = [
+            { name: 'Microplastic Count', icon: 'Droplet', unit: 'particles/km²', key: 'microplasticCount', color: '#10B981' }, // Green
+            { name: 'Temperature', icon: 'Thermometer', unit: '°C', key: 'temperature', color: '#EF4444' }, // Red
+            { name: 'Salinity', icon: 'Waves', unit: 'PSU', key: 'salinity', color: '#3B82F6' }, // Blue
+            { name: 'pH Level', icon: 'LocateFixed', unit: '', key: 'pH', color: '#F59E0B' }, // Amber
+            { name: 'Pressure', icon: 'Gauge', unit: 'kPa', key: 'pressure', color: '#8B5CF6' }, // Violet
+        ];
+
+        // --- MOCK DATA GENERATION ---
+        const generateMockData = (isNewPoint = false) => {
+            if (isNewPoint) {
+                // Generate a single new point
+                const now = Date.now();
+                const time = new Date(now).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const baseCount = 12000;
+                
+                // Use the length of the current data for the sine wave factor
+                const i = timeSeriesData.length; 
+
+                return {
+                    time: time,
+                    pH: parseFloat((8.1 + Math.random() * 0.2 - 0.1).toFixed(2)),
+                    temperature: parseFloat((18.5 + Math.random() * 1.5 - 0.75).toFixed(1)),
+                    salinity: parseFloat((35.0 + Math.random() * 0.5 - 0.25).toFixed(2)),
+                    pressure: parseFloat((101.3 + Math.random() * 0.5 - 0.25).toFixed(1)),
+                    microplasticCount: Math.floor(baseCount + Math.sin(i * 0.5) * 2000 + Math.random() * 1000)
+                };
+            } else {
+                // Generate initial 21 points
+                const initialData = [];
+                const now = Date.now();
+                for (let i = 20; i >= 0; i--) {
+                    const timestamp = now - i * 3600000; // 1 hour intervals
+                    const baseCount = 12000;
+                    const time = new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                    initialData.push({
+                        time: time,
+                        pH: parseFloat((8.1 + Math.random() * 0.2 - 0.1).toFixed(2)),
+                        temperature: parseFloat((18.5 + Math.random() * 1.5 - 0.75).toFixed(1)),
+                        salinity: parseFloat((35.0 + Math.random() * 0.5 - 0.25).toFixed(2)),
+                        pressure: parseFloat((101.3 + Math.random() * 0.5 - 0.25).toFixed(1)),
+                        microplasticCount: Math.floor(baseCount + Math.sin(i * 0.5) * 2000 + Math.random() * 1000)
+                    });
+                }
+                return initialData;
+            }
+        };
+
+        // --- RENDER FUNCTIONS ---
+
+        function formatNumber(value) {
+            return new Intl.NumberFormat().format(value);
+        }
+        
+        function renderStatCards() {
+            const latestData = timeSeriesData[timeSeriesData.length - 1] || {};
+            const grid = document.getElementById('metrics-grid');
+            grid.innerHTML = ''; // Clear existing cards
+
+            metrics.forEach(metric => {
+                const value = latestData[metric.key];
+                
+                const card = document.createElement('div');
+                card.className = 'glass-card p-6 rounded-xl shadow-lg transition duration-300 hover:bg-white/10 flex justify-center items-center';
+                
+                // Construct the card HTML
+                const iconHtml = `<div class="p-3 rounded-full bg-opacity-30" style="background-color: ${metric.color}33;">
+                                    <svg data-lucide="${metric.icon}" class="w-6 h-6" style="color: ${metric.color}"></svg>
+                                  </div>`;
+
+                card.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        ${iconHtml}
+                        <div>
+                            <p class="text-sm font-medium text-blue-200 uppercase tracking-wider">${metric.name}</p>
+                            <p class="text-3xl font-bold text-white mt-1">
+                                ${formatNumber(value)}
+                                <span class="text-lg font-light text-blue-300 ml-1">${metric.unit}</span>
+                            </p>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            // After injection, manually run lucide to render the icons
+            lucide.createIcons();
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+            
+            const datasets = metrics.map(metric => ({
+                label: `${metric.name} (${metric.unit})`,
+                data: timeSeriesData.map(d => d[metric.key]),
+                borderColor: metric.color,
+                backgroundColor: metric.color + '33',
+                tension: 0.4,
+                pointRadius: 0,
+                fill: false,
+                yAxisID: 'y' // Use a single Y-axis for simplicity
+            }));
+
+            dataChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeSeriesData.map(d => d.time),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#9CA3AF',
+                                maxRotation: 0,
+                                minRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8
+                            },
+                            grid: {
+                                color: '#374151',
+                                drawBorder: false,
+                            },
+                        },
+                        y: {
+                            ticks: {
+                                color: '#9CA3AF',
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            },
+                            grid: {
+                                color: '#374151',
+                                drawBorder: false,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Value',
+                                color: '#9CA3AF'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'white',
+                                boxWidth: 10,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            bodyFontColor: 'white',
+                            titleColor: 'white',
+                            backgroundColor: 'rgba(55, 65, 81, 0.9)',
+                            borderColor: '#3B82F6',
+                            borderWidth: 1,
+                            cornerRadius: 6
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(newPoint) {
+            // Remove the oldest point
+            timeSeriesData.shift(); 
+            // Add the new point
+            timeSeriesData.push(newPoint);
+
+            // Update Chart.js data
+            dataChart.data.labels = timeSeriesData.map(d => d.time);
+            metrics.forEach((metric, index) => {
+                dataChart.data.datasets[index].data = timeSeriesData.map(d => d[metric.key]);
+            });
+            
+            dataChart.update();
+        }
+
+        function updateFooter() {
+            const now = new Date();
+            document.getElementById('footer-text').textContent = 
+                `Data simulated for visualization purposes. Report generated on ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}.`;
+        }
+
+        // --- LIVE DATA LOOP ---
+        function startDataSimulation() {
+            // Initial data load
+            timeSeriesData = generateMockData();
+            renderStatCards();
+            initChart();
+            updateFooter();
+
+            // Set up interval for live updates
+            setInterval(() => {
+                const newPoint = generateMockData(true);
+                updateChart(newPoint);
+                renderStatCards(); // Re-render cards to show the latest data
+                updateFooter();
+            }, dataInterval);
+        }
+
+        // Wait for the window to load before starting the simulation
+        window.onload = startDataSimulation;
+
     </script>
 </body>
 </html>
-
-
